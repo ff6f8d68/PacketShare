@@ -27,7 +27,7 @@ const upload = multer({ storage });
 // Route: Handle Chunk Upload
 app.post('/upload-chunk', upload.single('file'), (req, res) => {
     const { chunkIndex, totalChunks, fileName } = req.body;
-    const chunkSize = 1024 * 1024; // 1MB per chunk
+    const chunkSize = 10 * 1024 * 1024; // 10MB per chunk
     const filePath = path.join(uploadDir, `${fileName}.part`);
 
     // Append the chunk to the file
