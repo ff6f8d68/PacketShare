@@ -25,30 +25,30 @@ const upload = multer({ storage });
 
 // Route: Handle Chunk Upload
 app.post('/upload-chunk', upload.single('file'), (req, res) => {
-    const { file } = req;
     const { chunkIndex, totalChunks, fileName } = req.body;
-
+    const chunkSize = 8; // 8 bytes
     const filePath = path.join(uploadDir, `${fileName}.part`);
-
+    const fileBuffer = Buffer.from(req.file.buffer);
+    
     // Append the chunk to the file
-    fs.appendFileSync(filePath, file.buffer);
+    fs.appendFileSync(filePath, fileBuffer);
 
-    // Once all chunks are uploaded, rename the final file
-    if (parseInt(chunkIndex) + 1 == parseInt(totalChunks)) {
-        const finalPath = path.join(uploadDir, fileName);
-
-        // Rename to final file name
-        fs.renameSync(filePath, finalPath);
-
-        // Generate download URL
-        const downloadUrl = `https://packetshare.onrender.com/files/${fileName}`;
-
-        // Send response
-        res.json({
-            status: 'success',
-            message: 'File upload complete',
-            downloadUrl: downloadUrl
-        });
+    // Check if all chunks are uploaded
+    if (parseInt(chunkIndex) + 1 === parseInt(totalChunks)) {
+        mergeChunks(fileName, filePath)
+            .then(() => {
+                const finalPath = path.join(uploadDir, fileName);
+                const downloadUrl = `https://packetshare.onrender.com/files/${fileName}`;
+                res.json({
+                    status: 'success',
+                    message: 'File upload complete',
+                    downloadUrl: downloadUrl
+                });
+            })
+            .catch(error => {
+                console.error('Error merging chunks:', error);
+                res.status(500).json({ status: 'error', message: 'Error merging chunks' });
+            });
     } else {
         res.json({
             status: 'success',
@@ -56,6 +56,21 @@ app.post('/upload-chunk', upload.single('file'), (req, res) => {
         });
     }
 });
+
+function mergeChunks(fileName, filePath) {
+    return new Promise((resolve, reject) => {
+        const finalPath = path.join(uploadDir, fileName);
+        const writeStream = fs.createWriteStream(finalPath);
+
+        fs.createReadStream(filePath)
+            .pipe(writeStream)
+            .on('finish', () => {
+                fs.unlinkSync(filePath); // Remove the chunk file
+                resolve();
+            })
+            .on('error', reject);
+    });
+}
 
 // Route: Serve uploaded files
 app.use('/files', express.static(uploadDir));
