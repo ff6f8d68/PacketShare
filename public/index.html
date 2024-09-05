@@ -6,6 +6,7 @@
     <title>File Upload & Download</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
+        /* Add styling here */
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #f0f4f8;
@@ -111,6 +112,8 @@
         <p>Drag and drop your file here or click to upload</p>
         <input type="file" id="fileElem" accept="*/*" />
         <button id="fileSelect">Select File</button>
+        <input type="text" id="password" placeholder="Password (optional)" />
+        <input type="checkbox" id="encryptName" /> Encrypt File Name
 
         <div class="progress-container">
             <div class="progress-bar" id="progress-bar"></div>
@@ -124,6 +127,8 @@
         const dropArea = document.getElementById('drop-area');
         const fileElem = document.getElementById('fileElem');
         const fileSelect = document.getElementById('fileSelect');
+        const passwordInput = document.getElementById('password');
+        const encryptNameCheckbox = document.getElementById('encryptName');
         const uploadStatus = document.getElementById('upload-status');
         const progressBar = document.getElementById('progress-bar');
         const progressContainer = document.querySelector('.progress-container');
@@ -161,6 +166,8 @@
         function uploadFile(file) {
             const formData = new FormData();
             formData.append('file', file);
+            formData.append('password', passwordInput.value);
+            formData.append('encryptName', encryptNameCheckbox.checked);
 
             fetch('/upload-file', {
                 method: 'POST',
@@ -172,7 +179,7 @@
                     uploadStatus.textContent = 'Upload complete!';
                     downloadLinkDiv.innerHTML = `<a href="${result.downloadUrl}" target="_blank">Download your file</a>`;
                 } else {
-                    uploadStatus.textContent = 'Error uploading file';
+                    uploadStatus.textContent = 'Error uploading file.';
                 }
             })
             .catch(error => {
