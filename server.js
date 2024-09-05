@@ -7,9 +7,11 @@ const crypto = require('crypto');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Directory where files and packets will be stored
 const uploadDir = path.join(__dirname, 'uploads');
 fs.ensureDirSync(uploadDir);
 
+// Multer setup for file uploads
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -29,10 +31,13 @@ app.post('/upload-file', upload.single('file'), async (req, res) => {
         const filePath = path.join(uploadDir, fileName);
         const regFilePath = path.join(uploadDir, `${fileName}.packet.reg`);
 
+        // Save the uploaded file
         await fs.writeFile(filePath, file.buffer);
 
+        // Split the file into 8-byte chunks
         await splitFileIntoChunks(filePath, regFilePath);
 
+        // Encrypt the file name
         const encryptedFileName = encryptFileName(fileName);
         const downloadUrl = `https://packetshare.onrender.com/download/${encryptedFileName}`;
         res.json({ status: 'success', downloadUrl });
@@ -78,6 +83,14 @@ function encryptFileName(fileName) {
     return encrypted;
 }
 
+// Function to decrypt the file name
+function decryptFileName(encryptedFileName) {
+    const decipher = crypto.createDecipher('aes-256-cbc', 'secret_key');
+    let decrypted = decipher.update(encryptedFileName, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+}
+
 // Route: Handle File Download
 app.get('/download/:fileName', async (req, res) => {
     const { fileName } = req.params;
@@ -86,16 +99,25 @@ app.get('/download/:fileName', async (req, res) => {
     const chunksDir = path.join(uploadDir, path.basename(decryptedFileName, path.extname(decryptedFileName)));
     const regFilePath = path.join(uploadDir, `${decryptedFileName}.packet.reg`);
 
+    console.log('Decrypted File Name:', decryptedFileName);
+    console.log('Chunks Directory:', chunksDir);
+    console.log('Registry File Path:', regFilePath);
+
     if (!await fs.pathExists(regFilePath)) {
+        console.error('Registry file not found:', regFilePath);
         return res.status(404).send('File registry not found');
     }
 
     if (packet) {
         // Handle individual packet download
         const packetFilePath = path.join(chunksDir, `${packet}.packet`);
+        console.log('Requested Packet ID:', packet);
+        console.log('Packet File Path:', packetFilePath);
+
         if (await fs.pathExists(packetFilePath)) {
             res.sendFile(packetFilePath);
         } else {
+            console.error('Packet file not found:', packetFilePath);
             res.status(404).send('Packet not found');
         }
     } else {
@@ -103,14 +125,6 @@ app.get('/download/:fileName', async (req, res) => {
         res.json({ filePath: chunksDir, regFilePath });
     }
 });
-
-// Function to decrypt the file name
-function decryptFileName(encryptedFileName) {
-    const decipher = crypto.createDecipher('aes-256-cbc', 'secret_key');
-    let decrypted = decipher.update(encryptedFileName, 'base64', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
-}
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
