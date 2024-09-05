@@ -224,31 +224,6 @@
             spinner.style.display = 'block';
             progressContainer.style.display = 'block';
 
-            fetch('/upload-file', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(result => {
-                // Hide spinner and progress bar
-                spinner.style.display = 'none';
-                progressContainer.style.display = 'none';
-
-                if (result.status === 'success') {
-                    uploadStatus.textContent = 'Upload complete!';
-                    downloadLinkDiv.innerHTML = `<a href="${result.downloadUrl}" target="_blank">Download your file</a>`;
-                } else {
-                    uploadStatus.textContent = 'Error uploading file.';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                spinner.style.display = 'none';
-                progressContainer.style.display = 'none';
-                uploadStatus.textContent = 'Error uploading file.';
-            });
-
-            // Update progress bar
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/upload-file', true);
 
@@ -261,15 +236,28 @@
             };
 
             xhr.onload = function() {
+                // Hide spinner and progress bar
+                spinner.style.display = 'none';
+                progressContainer.style.display = 'none';
+
                 if (xhr.status >= 200 && xhr.status < 300) {
-                    // Success case
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.status === 'success') {
+                        uploadStatus.textContent = 'Upload complete!';
+                        downloadLinkDiv.innerHTML = `<a href="${result.downloadUrl}" target="_blank">Download your file</a>`;
+                    } else {
+                        uploadStatus.textContent = 'Error uploading file.';
+                    }
                 } else {
-                    // Error case
+                    uploadStatus.textContent = 'Error uploading file.';
                 }
             };
 
             xhr.onerror = function() {
                 console.error('Error during upload.');
+                spinner.style.display = 'none';
+                progressContainer.style.display = 'none';
+                uploadStatus.textContent = 'Error uploading file.';
             };
 
             xhr.send(formData);
