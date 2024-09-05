@@ -16,6 +16,9 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
 
+// Serve static files (like HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Configure Multer for handling chunk uploads
 const storage = multer.memoryStorage(); // Use memory storage to handle chunks
 const upload = multer({ storage });
@@ -48,6 +51,11 @@ app.post('/upload-chunk', upload.single('file'), (req, res) => {
             message: `Chunk ${chunkIndex} uploaded`
         });
     }
+});
+
+// Route: Serve the main page
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start the server
