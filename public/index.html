@@ -9,31 +9,58 @@
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
+            background-color: #f4f4f4;
         }
         #uploadForm {
             margin: 20px auto;
             max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #fileInput {
+            display: block;
+            margin: 0 auto 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
         }
         #progressContainer {
             margin-top: 20px;
-            text-align: center;
         }
         #progressBar {
             width: 0;
-            height: 20px;
+            height: 25px;
             background: #4caf50;
             color: #fff;
             text-align: center;
+            line-height: 25px;
+            border-radius: 5px;
+            transition: width 0.3s;
         }
-        #fileInput {
-            margin-bottom: 20px;
+        #downloadLink {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <h1>Upload Your File</h1>
     <form id="uploadForm">
-        <input type="file" id="fileInput" name="file" required />
+        <input type="file" id="fileInput" name="file" accept="*/*" required />
         <button type="submit">Upload</button>
     </form>
     <div id="progressContainer">
@@ -46,7 +73,7 @@
             event.preventDefault();
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
-            
+
             if (!file) {
                 alert('Please choose a file to upload.');
                 return;
@@ -69,10 +96,17 @@
             xhr.onload = function() {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     const response = JSON.parse(xhr.responseText);
-                    document.getElementById('downloadLink').innerHTML = `<p>File uploaded successfully! <a href="${response.downloadUrl}" target="_blank">Download Link</a></p>`;
+                    document.getElementById('downloadLink').innerHTML = `
+                        <p>File uploaded successfully!</p>
+                        <p>Download your file <a href="${response.downloadUrl}" target="_blank">here</a>.</p>
+                    `;
                 } else {
                     alert('Error uploading file.');
                 }
+            };
+
+            xhr.onerror = function() {
+                alert('Error during upload.');
             };
 
             xhr.send(formData);
