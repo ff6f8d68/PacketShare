@@ -6,7 +6,103 @@
     <title>Chunked File Upload</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* Add your inline styles here or move it to a separate CSS file */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #drop-area {
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        #drop-area.highlight {
+            background: #e0f7fa;
+            border-color: #00acc1;
+        }
+
+        #drop-area p {
+            font-size: 20px;
+            font-weight: 400;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #fileElem {
+            display: none;
+        }
+
+        #fileSelect {
+            padding: 12px 24px;
+            background: #00acc1;
+            color: #ffffff;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        #fileSelect:hover {
+            background: #00838f;
+        }
+
+        #upload-status {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        .progress-container {
+            width: 100%;
+            background: #e0e0e0;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 20px;
+            height: 15px;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #00acc1;
+            width: 0;
+            transition: width 0.4s ease;
+        }
+
+        #uploaded-percentage {
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #00acc1;
+        }
+
+        #download-link {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        #download-link a {
+            color: #00acc1;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        #download-link a:hover {
+            color: #00838f;
+        }
     </style>
 </head>
 <body>
@@ -20,7 +116,7 @@
             <div class="progress-bar" id="progress-bar"></div>
         </div>
         <div id="uploaded-percentage"></div>
-        <div id="download-link" style="margin-top: 20px;"></div>
+        <div id="download-link"></div>
     </div>
     <div id="upload-status"></div>
 
