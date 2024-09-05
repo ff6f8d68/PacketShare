@@ -130,7 +130,7 @@
         const uploadedPercentage = document.getElementById('uploaded-percentage');
         const downloadLinkDiv = document.getElementById('download-link');
 
-        const CHUNK_SIZE = 1024 * 1024 * 5; // 5MB per chunk
+        const CHUNK_SIZE = 8; // 8 bytes per chunk
 
         fileSelect.addEventListener('click', () => fileElem.click());
 
