@@ -3,222 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Upload & Download</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>PacketShare Upload</title>
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f0f4f8;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-        }
-
-        #drop-area {
-            width: 100%;
-            max-width: 600px;
-            padding: 40px;
-            border-radius: 12px;
-            background: #ffffff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-family: Arial, sans-serif;
             text-align: center;
-            transition: background 0.3s, border-color 0.3s;
+            padding: 20px;
+        }
+        #uploadForm {
+            margin: 20px auto;
+            max-width: 600px;
+        }
+        #progressContainer {
             margin-top: 20px;
+            text-align: center;
         }
-
-        #drop-area.highlight {
-            background: #e0f7fa;
-            border-color: #00acc1;
-        }
-
-        #drop-area p {
-            font-size: 20px;
-            font-weight: 400;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        #fileElem {
-            display: none;
-        }
-
-        #fileSelect {
-            padding: 12px 24px;
-            background: #00acc1;
-            color: #ffffff;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
-        }
-
-        #fileSelect:hover {
-            background: #00838f;
-        }
-
-        #upload-status {
-            margin-top: 20px;
-            font-size: 16px;
-            color: #555;
-        }
-
-        .progress-container {
-            width: 100%;
-            background: #e0e0e0;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-top: 20px;
-            height: 15px;
-            display: none;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: #00acc1;
+        #progressBar {
             width: 0;
-            transition: width 0.4s ease;
-        }
-
-        #uploaded-percentage {
-            margin-top: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #00acc1;
-        }
-
-        #download-link {
-            margin-top: 20px;
-            font-size: 16px;
-        }
-
-        #download-link a {
-            color: #00acc1;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.3s;
-        }
-
-        #download-link a:hover {
-            color: #00838f;
-        }
-
-        #how-it-works {
-            width: 100%;
-            max-width: 600px;
-            padding: 40px;
-            border-radius: 12px;
-            background: #ffffff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 40px;
+            height: 20px;
+            background: #4caf50;
+            color: #fff;
             text-align: center;
         }
-
-        #how-it-works h2 {
-            font-size: 24px;
-            color: #333;
+        #fileInput {
             margin-bottom: 20px;
-        }
-
-        #how-it-works p {
-            font-size: 16px;
-            color: #555;
-            margin-bottom: 20px;
-        }
-
-        #how-it-works img {
-            max-width: 100%;
-            border-radius: 8px;
         }
     </style>
 </head>
 <body>
-
-    <div id="drop-area">
-        <p>Drag and drop your file here or click to upload</p>
-        <input type="file" id="fileElem" accept="*/*" />
-        <button id="fileSelect">Select File</button>
-
-        <div class="progress-container">
-            <div class="progress-bar" id="progress-bar"></div>
-        </div>
-        <div id="uploaded-percentage"></div>
-        <div id="download-link"></div>
+    <h1>Upload Your File</h1>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" name="file" required />
+        <button type="submit">Upload</button>
+    </form>
+    <div id="progressContainer">
+        <div id="progressBar">0%</div>
     </div>
-
-    <div id="upload-status"></div>
-
-    <div id="how-it-works">
-        <h2>How It Works</h2>
-        <p>Our file sharing system allows you to upload files with fast speeds and efficient handling. Here’s how it works:</p>
-        <img src="public/howitworks.png" alt="How It Works">
-        <p>1. **Upload your file**: Drag and drop your file or select it manually.</p>
-        <p>2. **File Splitting**: The server splits your file into 8-byte chunks and creates a `.bin.reg` file to manage the chunks.</p>
-        <p>3. **Download**: Receive a download link where you can fetch your file chunk by chunk and reassemble it on the client side.</p>
-    </div>
+    <div id="downloadLink"></div>
 
     <script>
-        const dropArea = document.getElementById('drop-area');
-        const fileElem = document.getElementById('fileElem');
-        const fileSelect = document.getElementById('fileSelect');
-        const uploadStatus = document.getElementById('upload-status');
-        const progressBar = document.getElementById('progress-bar');
-        const progressContainer = document.querySelector('.progress-container');
-        const uploadedPercentage = document.getElementById('uploaded-percentage');
-        const downloadLinkDiv = document.getElementById('download-link');
-
-        fileSelect.addEventListener('click', () => fileElem.click());
-
-        fileElem.addEventListener('change', () => {
-            const files = fileElem.files;
-            handleFiles(files);
-        });
-
-        dropArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropArea.classList.add('highlight');
-        });
-
-        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('highlight'));
-
-        dropArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropArea.classList.remove('highlight');
-            const files = e.dataTransfer.files;
-            handleFiles(files);
-        });
-
-        function handleFiles(files) {
-            const file = files[0];
-            if (file) {
-                uploadFile(file);
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please choose a file to upload.');
+                return;
             }
-        }
 
-        function uploadFile(file) {
             const formData = new FormData();
             formData.append('file', file);
 
-            fetch('/upload-file', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.status === 'success') {
-                    uploadStatus.textContent = 'Upload complete!';
-                    downloadLinkDiv.innerHTML = `<a href="${result.downloadUrl}" target="_blank">Download your file</a>`;
-                } else {
-                    uploadStatus.textContent = 'Error uploading file.';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                uploadStatus.textContent = 'Error uploading file.';
-            });
-        }
-    </script>
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'https://packetshare.onrender.com/upload-file', true);
 
+            xhr.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    document.getElementById('progressBar').style.width = percentComplete + '%';
+                    document.getElementById('progressBar').textContent = Math.round(percentComplete) + '%';
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const response = JSON.parse(xhr.responseText);
+                    document.getElementById('downloadLink').innerHTML = `<p>File uploaded successfully! <a href="${response.downloadUrl}" target="_blank">Download Link</a></p>`;
+                } else {
+                    alert('Error uploading file.');
+                }
+            };
+
+            xhr.send(formData);
+        });
+    </script>
 </body>
 </html>
