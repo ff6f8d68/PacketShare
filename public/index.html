@@ -6,90 +6,7 @@
     <title>Chunked File Upload</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f3f4f6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-
-        #drop-area {
-            width: 400px;
-            padding: 30px;
-            border-radius: 15px;
-            background-color: #ffffff;
-            border: 2px dashed #007BFF;
-            text-align: center;
-            transition: all 0.3s ease-in-out;
-            position: relative;
-        }
-
-        #drop-area.highlight {
-            background-color: #e7f1ff;
-            border-color: #0056b3;
-        }
-
-        #drop-area p {
-            font-size: 18px;
-            font-weight: 300;
-            color: #555;
-            margin-bottom: 20px;
-        }
-
-        #fileElem {
-            display: none;
-        }
-
-        #fileSelect {
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        #fileSelect:hover {
-            background-color: #0056b3;
-        }
-
-        #upload-status {
-            margin-top: 20px;
-            font-size: 16px;
-            color: #555;
-        }
-
-        .progress-container {
-            width: 100%;
-            background-color: #e0e0e0;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-top: 20px;
-            height: 15px;
-            display: none;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 100%;
-            background-color: #007BFF;
-            transition: width 0.4s ease;
-        }
-
-        #uploaded-percentage {
-            margin-top: 10px;
-            font-size: 14px;
-            font-weight: 400;
-        }
+        /* Add your inline styles here or move it to a separate CSS file */
     </style>
 </head>
 <body>
@@ -103,6 +20,7 @@
             <div class="progress-bar" id="progress-bar"></div>
         </div>
         <div id="uploaded-percentage"></div>
+        <div id="download-link" style="margin-top: 20px;"></div>
     </div>
     <div id="upload-status"></div>
 
@@ -114,6 +32,7 @@
         const progressBar = document.getElementById('progress-bar');
         const progressContainer = document.querySelector('.progress-container');
         const uploadedPercentage = document.getElementById('uploaded-percentage');
+        const downloadLinkDiv = document.getElementById('download-link');
 
         const CHUNK_SIZE = 1024 * 1024 * 5; // 5MB per chunk
 
@@ -180,6 +99,8 @@
                             uploadNextChunk(); // Upload the next chunk
                         } else {
                             uploadStatus.textContent = 'Upload complete!';
+                            // Display download link
+                            downloadLinkDiv.innerHTML = `<a href="${result.downloadUrl}" target="_blank">Download your file</a>`;
                         }
                     } else {
                         uploadStatus.textContent = 'Error uploading chunk';
