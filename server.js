@@ -89,6 +89,7 @@ app.get('/download/:fileName', async (req, res) => {
         return res.status(404).send('File not found');
     }
 
+    // Create the response with file and reg file paths
     res.json({ filePath, regFilePath });
 });
 
