@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs-extra');
+const crypto = require('crypto');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -32,7 +33,8 @@ app.post('/upload-file', upload.single('file'), async (req, res) => {
 
         await splitFileIntoChunks(filePath, regFilePath);
 
-        const downloadUrl = `https://packetshare.onrender.com/download/${fileName}`;
+        const encryptedFileName = encryptFileName(fileName);
+        const downloadUrl = `https://packetshare.onrender.com/download/${encryptedFileName}`;
         res.json({ status: 'success', downloadUrl });
     } catch (err) {
         console.error('Error:', err);
@@ -68,11 +70,20 @@ async function splitFileIntoChunks(filePath, regFilePath) {
     }
 }
 
+// Function to encrypt the file name
+function encryptFileName(fileName) {
+    const cipher = crypto.createCipher('aes-256-cbc', 'secret_key');
+    let encrypted = cipher.update(fileName, 'utf8', 'base64');
+    encrypted += cipher.final('base64');
+    return encrypted;
+}
+
 // Route: Handle File Download
 app.get('/download/:fileName', async (req, res) => {
     const { fileName } = req.params;
-    const filePath = path.join(uploadDir, fileName);
-    const regFilePath = path.join(uploadDir, `${fileName}.bin.reg`);
+    const decryptedFileName = decryptFileName(fileName);
+    const filePath = path.join(uploadDir, decryptedFileName);
+    const regFilePath = path.join(uploadDir, `${decryptedFileName}.bin.reg`);
 
     if (!await fs.pathExists(filePath) || !await fs.pathExists(regFilePath)) {
         return res.status(404).send('File not found');
@@ -81,9 +92,16 @@ app.get('/download/:fileName', async (req, res) => {
     res.json({ filePath, regFilePath });
 });
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Function to decrypt the file name
+function decryptFileName(encryptedFileName) {
+    const decipher = crypto.createDecipher('aes-256-cbc', 'secret_key');
+    let decrypted = decipher.update(encryptedFileName, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
 }
+
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
