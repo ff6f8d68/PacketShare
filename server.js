@@ -40,10 +40,14 @@ app.post('/upload-chunk', upload.single('file'), (req, res) => {
         // Rename to final file name
         fs.renameSync(filePath, finalPath);
 
+        // Generate download URL
+        const downloadUrl = `http://localhost:${port}/files/${fileName}`;
+
         // Send response
         res.json({
             status: 'success',
-            message: 'File upload complete'
+            message: 'File upload complete',
+            downloadUrl: downloadUrl
         });
     } else {
         res.json({
@@ -52,6 +56,9 @@ app.post('/upload-chunk', upload.single('file'), (req, res) => {
         });
     }
 });
+
+// Route: Serve uploaded files
+app.use('/files', express.static(uploadDir));
 
 // Route: Serve the main page
 app.get('/', (req, res) => {
