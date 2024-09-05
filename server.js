@@ -41,7 +41,7 @@ app.post('/upload-chunk', upload.single('file'), (req, res) => {
         fs.renameSync(filePath, finalPath);
 
         // Generate download URL
-        const downloadUrl = `http://localhost:${port}/files/${fileName}`;
+        const downloadUrl = `https://packetshare.onrender.com/files/${fileName}`;
 
         // Send response
         res.json({
