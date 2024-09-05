@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chunked File Upload</title>
+    <title>File Upload & Download</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -18,7 +18,7 @@
 
         #drop-area {
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             padding: 40px;
             border-radius: 12px;
             background: #ffffff;
@@ -130,8 +130,6 @@
         const uploadedPercentage = document.getElementById('uploaded-percentage');
         const downloadLinkDiv = document.getElementById('download-link');
 
-        const CHUNK_SIZE = 1024 * 1024; // 1MB per chunk
-
         fileSelect.addEventListener('click', () => fileElem.click());
 
         fileElem.addEventListener('change', () => {
@@ -156,59 +154,31 @@
         function handleFiles(files) {
             const file = files[0];
             if (file) {
-                uploadFileInChunks(file);
+                uploadFile(file);
             }
         }
 
-        function uploadFileInChunks(file) {
-            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-            let chunkIndex = 0;
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
 
-            progressContainer.style.display = 'block'; // Show progress bar
-
-            function uploadNextChunk() {
-                const start = chunkIndex * CHUNK_SIZE;
-                const end = Math.min(start + CHUNK_SIZE, file.size);
-                const chunk = file.slice(start, end);
-
-                const formData = new FormData();
-                formData.append('file', chunk);
-                formData.append('chunkIndex', chunkIndex);
-                formData.append('totalChunks', totalChunks);
-                formData.append('fileName', file.name);
-
-                fetch('/upload-chunk', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.status === 'success') {
-                        chunkIndex++;
-
-                        // Update progress bar
-                        const percentage = ((chunkIndex / totalChunks) * 100).toFixed(0);
-                        progressBar.style.width = percentage + '%';
-                        uploadedPercentage.textContent = percentage + '% uploaded';
-
-                        if (chunkIndex < totalChunks) {
-                            uploadNextChunk(); // Upload the next chunk
-                        } else {
-                            uploadStatus.textContent = 'Upload complete!';
-                            // Display download link
-                            downloadLinkDiv.innerHTML = `<a href="${result.downloadUrl}" target="_blank">Download your file</a>`;
-                        }
-                    } else {
-                        uploadStatus.textContent = 'Error uploading chunk';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    uploadStatus.textContent = 'Error uploading file.';
-                });
-            }
-
-            uploadNextChunk();
+            fetch('/upload-file', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'success') {
+                    uploadStatus.textContent = 'Upload complete!';
+                    downloadLinkDiv.innerHTML = `<a href="${result.downloadUrl}" target="_blank">Download your file</a>`;
+                } else {
+                    uploadStatus.textContent = 'Error uploading file';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                uploadStatus.textContent = 'Error uploading file.';
+            });
         }
     </script>
 
