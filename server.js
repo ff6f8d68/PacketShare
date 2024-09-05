@@ -22,26 +22,27 @@ app.use(express.urlencoded({ extended: true }));
 // Route: Handle File Upload
 app.post('/upload-file', upload.single('file'), async (req, res) => {
     const file = req.file;
-    const password = req.body.password; // Get password from the request
-    const fileName = file.originalname;
-    const encryptedFileName = encrypt(fileName);
-    const filePath = path.join(uploadDir, encryptedFileName);
-    const regFilePath = path.join(uploadDir, `${encryptedFileName}.bin.reg`);
-
+    const password = req.body.password;
+    const encryptName = req.body.encryptName === 'true'; // Checkbox returns string 'true' or 'false'
+    
     if (!file) {
         return res.status(400).json({ status: 'error', message: 'No file uploaded' });
     }
 
     try {
+        const fileName = file.originalname;
+        const encryptedFileName = encryptName ? encrypt(fileName) : fileName;
+        const filePath = path.join(uploadDir, encryptedFileName);
+        const regFilePath = path.join(uploadDir, `${encryptedFileName}.bin.reg`);
+        const passwordHashPath = path.join(uploadDir, `${encryptedFileName}.pwd`);
+
         await fs.writeFile(filePath, file.buffer);
 
-        // Split file into 8-byte chunks
         await splitFileIntoChunks(filePath, regFilePath);
 
-        // Save password if provided
         if (password) {
             const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
-            await fs.writeFile(path.join(uploadDir, `${encryptedFileName}.pwd`), passwordHash);
+            await fs.writeFile(passwordHashPath, passwordHash);
         }
 
         const downloadUrl = `https://packetshare.onrender.com/download/${encryptedFileName}`;
@@ -55,23 +56,29 @@ app.post('/upload-file', upload.single('file'), async (req, res) => {
 async function splitFileIntoChunks(filePath, regFilePath) {
     const chunkSize = 8;
     const chunksDir = path.join(uploadDir, path.basename(filePath, path.extname(filePath)));
+    
     await fs.ensureDir(chunksDir);
 
-    const data = await fs.readFile(filePath);
-    const totalChunks = Math.ceil(data.length / chunkSize);
-    const regFile = [];
+    try {
+        const data = await fs.readFile(filePath);
+        const totalChunks = Math.ceil(data.length / chunkSize);
+        const regFile = [];
 
-    for (let i = 0; i < totalChunks; i++) {
-        const start = i * chunkSize;
-        const end = Math.min(start + chunkSize, data.length);
-        const chunk = data.slice(start, end);
-        const chunkFilePath = path.join(chunksDir, `${i}.bin`);
+        for (let i = 0; i < totalChunks; i++) {
+            const start = i * chunkSize;
+            const end = Math.min(start + chunkSize, data.length);
+            const chunk = data.slice(start, end);
+            const chunkFilePath = path.join(chunksDir, `${i}.bin`);
 
-        await fs.writeFile(chunkFilePath, chunk);
-        regFile.push({ index: i, path: chunkFilePath });
+            await fs.writeFile(chunkFilePath, chunk);
+            regFile.push({ index: i, path: chunkFilePath });
+        }
+
+        await fs.writeJson(regFilePath, regFile);
+    } catch (err) {
+        console.error('Error splitting file into chunks:', err);
+        throw err;
     }
-
-    await fs.writeJson(regFilePath, regFile);
 }
 
 // Route: Handle File Download
@@ -82,7 +89,6 @@ app.get('/download/:fileName', async (req, res) => {
     const regFilePath = path.join(uploadDir, `${decryptedFileName}.bin.reg`);
     const passwordHashPath = path.join(uploadDir, `${decryptedFileName}.pwd`);
     
-    // Check if password is provided and validate
     const password = req.query.password;
     if (password) {
         if (!await fs.pathExists(passwordHashPath)) {
