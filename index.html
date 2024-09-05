@@ -112,7 +112,7 @@
                   // For demonstration, assuming the file name is returned and using SHA-256 hash.
                   const fileName = encodeURIComponent(files[0].name); // This should be replaced with actual file name from response
                   const downloadKey = sha256(fileName); // Hash the file name
-                  downloadLink.href = `https://<your-site>.netlify.app/.netlify/functions/file-handler?downloadkey=${downloadKey}`;
+                  downloadLink.href = `https://packetshare.netlify.app/.netlify/functions/file-handler?downloadkey=${downloadKey}`;
                   fileLink.style.display = 'block';
               })
               .catch(error => {
