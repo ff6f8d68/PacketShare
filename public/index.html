@@ -13,6 +13,7 @@
             flex-direction: column;
             align-items: center;
             margin: 0;
+            padding: 20px;
         }
 
         #drop-area {
@@ -131,6 +132,23 @@
             max-width: 100%;
             border-radius: 8px;
         }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #00acc1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -145,6 +163,7 @@
         </div>
         <div id="uploaded-percentage"></div>
         <div id="download-link"></div>
+        <div class="spinner" id="spinner"></div>
     </div>
 
     <div id="upload-status"></div>
@@ -167,6 +186,7 @@
         const progressContainer = document.querySelector('.progress-container');
         const uploadedPercentage = document.getElementById('uploaded-percentage');
         const downloadLinkDiv = document.getElementById('download-link');
+        const spinner = document.getElementById('spinner');
 
         fileSelect.addEventListener('click', () => fileElem.click());
 
@@ -200,12 +220,20 @@
             const formData = new FormData();
             formData.append('file', file);
 
+            // Show spinner and progress bar
+            spinner.style.display = 'block';
+            progressContainer.style.display = 'block';
+
             fetch('/upload-file', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(result => {
+                // Hide spinner and progress bar
+                spinner.style.display = 'none';
+                progressContainer.style.display = 'none';
+
                 if (result.status === 'success') {
                     uploadStatus.textContent = 'Upload complete!';
                     downloadLinkDiv.innerHTML = `<a href="${result.downloadUrl}" target="_blank">Download your file</a>`;
@@ -215,8 +243,36 @@
             })
             .catch(error => {
                 console.error('Error:', error);
+                spinner.style.display = 'none';
+                progressContainer.style.display = 'none';
                 uploadStatus.textContent = 'Error uploading file.';
             });
+
+            // Update progress bar
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload-file', true);
+
+            xhr.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    progressBar.style.width = percentComplete + '%';
+                    uploadedPercentage.textContent = Math.round(percentComplete) + '%';
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    // Success case
+                } else {
+                    // Error case
+                }
+            };
+
+            xhr.onerror = function() {
+                console.error('Error during upload.');
+            };
+
+            xhr.send(formData);
         }
     </script>
 
