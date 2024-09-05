@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const stream = require('stream');
 
 // Initialize Express app
 const app = express();
@@ -20,18 +21,17 @@ if (!fs.existsSync(uploadDir)) {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Configure Multer for handling chunk uploads
-const storage = multer.memoryStorage(); // Use memory storage to handle chunks
+const storage = multer.memoryStorage(); // Use memory storage for handling chunks
 const upload = multer({ storage });
 
 // Route: Handle Chunk Upload
 app.post('/upload-chunk', upload.single('file'), (req, res) => {
     const { chunkIndex, totalChunks, fileName } = req.body;
-    const chunkSize = 8; // 8 bytes
+    const chunkSize = 1024 * 1024; // 1MB per chunk
     const filePath = path.join(uploadDir, `${fileName}.part`);
-    const fileBuffer = Buffer.from(req.file.buffer);
-    
+
     // Append the chunk to the file
-    fs.appendFileSync(filePath, fileBuffer);
+    fs.appendFileSync(filePath, req.file.buffer);
 
     // Check if all chunks are uploaded
     if (parseInt(chunkIndex) + 1 === parseInt(totalChunks)) {
