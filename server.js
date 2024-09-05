@@ -27,7 +27,7 @@ app.post('/upload-file', upload.single('file'), async (req, res) => {
     try {
         const fileName = file.originalname;
         const filePath = path.join(uploadDir, fileName);
-        const regFilePath = path.join(uploadDir, `${fileName}.bin.reg`);
+        const regFilePath = path.join(uploadDir, `${fileName}.packet.reg`);
 
         await fs.writeFile(filePath, file.buffer);
 
@@ -57,7 +57,7 @@ async function splitFileIntoChunks(filePath, regFilePath) {
             const start = i * chunkSize;
             const end = Math.min(start + chunkSize, data.length);
             const chunk = data.slice(start, end);
-            const chunkFilePath = path.join(chunksDir, `${i}.bin`);
+            const chunkFilePath = path.join(chunksDir, `${i}.packet`);
 
             await fs.writeFile(chunkFilePath, chunk);
             regFile.push({ index: i, path: chunkFilePath });
@@ -81,16 +81,27 @@ function encryptFileName(fileName) {
 // Route: Handle File Download
 app.get('/download/:fileName', async (req, res) => {
     const { fileName } = req.params;
+    const { packet } = req.query;
     const decryptedFileName = decryptFileName(fileName);
-    const filePath = path.join(uploadDir, decryptedFileName);
-    const regFilePath = path.join(uploadDir, `${decryptedFileName}.bin.reg`);
+    const chunksDir = path.join(uploadDir, path.basename(decryptedFileName, path.extname(decryptedFileName)));
+    const regFilePath = path.join(uploadDir, `${decryptedFileName}.packet.reg`);
 
-    if (!await fs.pathExists(filePath) || !await fs.pathExists(regFilePath)) {
-        return res.status(404).send('File not found');
+    if (!await fs.pathExists(regFilePath)) {
+        return res.status(404).send('File registry not found');
     }
 
-    // Create the response with file and reg file paths
-    res.json({ filePath, regFilePath });
+    if (packet) {
+        // Handle individual packet download
+        const packetFilePath = path.join(chunksDir, `${packet}.packet`);
+        if (await fs.pathExists(packetFilePath)) {
+            res.sendFile(packetFilePath);
+        } else {
+            res.status(404).send('Packet not found');
+        }
+    } else {
+        // Handle full metadata download
+        res.json({ filePath: chunksDir, regFilePath });
+    }
 });
 
 // Function to decrypt the file name
